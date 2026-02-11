@@ -150,13 +150,14 @@ static result nnc_ivfc_wclose(nnc_ivfc_writer *self)
 {
 	/* -1 since the final level doesn't need it's own hash buffer */
 	nnc_sha256_hash *hash_buffers[NNC_IVFC_MAX_LEVELS - 1] = {0};
-	hash_buffers[self->levels - 2] = self->block_hashes;
-	nnc_sha256_hash *master_hashes = NULL;
 
 	result ret = NNC_R_OK;
 	u64 pad_bytes = ALIGN(self->final_lv_size, self->block_size) - self->final_lv_size;
 	/* We may still need to finish the last hash if it wasn't complete yet, let's just do that right now quickly by padding */
 	TRYLBL(nnc_write_padding(NNC_WSP(self), pad_bytes), out);
+
+	hash_buffers[self->levels - 2] = self->block_hashes;
+	nnc_sha256_hash *master_hashes = NULL;
 
 	/* now we'll calculate all sizes of each level */
 	u64 level_sizes[NNC_IVFC_MAX_LEVELS];
