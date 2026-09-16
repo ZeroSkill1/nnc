@@ -295,7 +295,7 @@ nnc_result nnc_ncch_exefs_subview(nnc_ncch_header *ncch, nnc_rstream *rs,
 
 	SUBVIEW_R(enc,
 		NNC_MU_TO_BYTE(ncch->exefs_offset) + NNC_EXEFS_HEADER_SIZE + header->offset,
-		header->size);
+		ALIGN(header->size, 0x10));
 	return nnc_aes_ctr_open(&section->u.enc.crypt, NNC_RSP(&section->u.enc.sv), key, iv);
 }
 

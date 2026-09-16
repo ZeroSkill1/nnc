@@ -40,24 +40,41 @@ static result do_kernel_caps(nnc_exheader *exh, nnc_u8 *buf)
 			exh->max_handles = desc & 0x3FF;
 		else if((desc & 0xFF800000) == 0xFF000000)
 			exh->kflags = desc & 0xFFFF; /* in reality only 13 bits are in use */
-#define DO_MMAP(base_type, f1, f2, f3) \
-			else if((desc & f1) == f2) \
-			{ \
-				if(mmap_count == NNC_MAX_MMAPS) return NNC_R_CORRUPT; \
-				nnc_u32 is_rw = desc & (1 << 20); \
-				exh->memory_mappings[mmap_count].type = is_rw \
-					? base_type##_RO : base_type##_RW; \
-				exh->memory_mappings[mmap_count].range_start = (desc & f3) << 12; \
-				if(++i == 28) return NNC_R_CORRUPT; \
-				desc = LE32P(&buf[0x370 + 0x4 * i]); \
-				if((desc & f1) != f2 || (desc & (1 << 20)) != is_rw) \
-					return NNC_R_CORRUPT; \
-				exh->memory_mappings[mmap_count].range_end = (desc & f3) << 12; \
-				++mmap_count; \
-			}
-		DO_MMAP(NNC_EXHDR_MMAP_STATIC, 0xFFE00000, 0xFF800000, 0xFFFFF)
-		DO_MMAP(NNC_EXHDR_MMAP_IO, 0xFFF00000, 0xFFE00000, 0x1FFFFF)
-#undef DO_MMAP
+		else if((desc & 0xFFE00000) == 0xFF800000)
+		{ /* map io/static range */
+			if(mmap_count == NNC_MAX_MMAPS) return NNC_R_LIMITS;
+			if(++i == 28) return NNC_R_CORRUPT;
+
+			u32 desc_end = LE32P(&buf[0x370 + 0x4 * i]);
+			if((desc & 0xFFE00000) != 0xFF800000)
+				return NNC_R_CORRUPT;
+
+			struct nnc_exheader_mem_mapping *mapping = &exh->memory_mappings[mmap_count++];
+
+			u32 is_rw = desc & (1 << 20);
+			u32 is_static = desc_end & (1 << 20);
+
+			if( is_rw &&  is_static) mapping->type = NNC_EXHDR_MMAP_STATIC_RW;
+			if(!is_rw &&  is_static) mapping->type = NNC_EXHDR_MMAP_STATIC_RO;
+			if( is_rw && !is_static) mapping->type = NNC_EXHDR_MMAP_IO_RW;
+			if(!is_rw && !is_static) mapping->type = NNC_EXHDR_MMAP_IO_RO;
+
+			mapping->range_start = desc     & 0xFFFFF;
+			mapping->range_end   = desc_end & 0xFFFFF;
+		}
+		else if((desc & 0xFFF00000) == 0xFFE00000)
+		{ /* map single io page */
+			if(mmap_count == NNC_MAX_MMAPS) return NNC_R_LIMITS;
+
+			struct nnc_exheader_mem_mapping *mapping = &exh->memory_mappings[mmap_count++];
+
+			u32 is_rw = desc & (1 << 20);
+			u32 page = desc & 0xFFFFF;
+
+			mapping->range_start = page;
+			mapping->range_end = page + 1;
+			mapping->type = is_rw ? NNC_EXHDR_MMAP_IO_RW : NNC_EXHDR_MMAP_IO_RO;
+		}
 		else if(desc != 0xFFFFFFFF)
 			return NNC_R_CORRUPT; /* / not supported */
 	}

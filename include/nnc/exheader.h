@@ -164,8 +164,8 @@ typedef struct nnc_exheader {
 	nnc_u32 max_handles;                                                      ///< Maximum handles.
 	nnc_u16 kflags;                                                           ///< Kernel flags, see \ref nnc_exheader_kflag
 	struct nnc_exheader_mem_mapping {
-		nnc_u32 range_start, ///< Start of the range.
-		        range_end;   ///< End of the range, not inclusive.
+		nnc_u32 range_start, ///< Start of the range, page index.
+		        range_end;   ///< End of the range, page index, exclusive.
 		enum nnc_exheader_mem_mapping_type {
 			NNC_EXHDR_MMAP_END_ARRAY = 0, ///< Terminator, see \ref nnc_exheader::memory_mappings.
 			NNC_EXHDR_MMAP_STATIC_RW = 1, ///< Static read/write.

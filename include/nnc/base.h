@@ -71,6 +71,7 @@ enum nnc_result_codes {
 	NNC_R_OPEN,            ///< File open.
 	NNC_R_OS,              ///< Generic operating system error.
 	NNC_R_INTERNAL,        ///< Internal library error, this should not happen.
+	NNC_R_LIMITS,          ///< File exceeds hardcoded nnc limits.
 };
 
 enum nnc_tid_category {

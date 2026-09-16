@@ -131,6 +131,7 @@ const char *nnc_strerror(nnc_result res)
 	case NNC_R_OPEN: return "already open";
 	case NNC_R_OS: return "OS error";
 	case NNC_R_INTERNAL: return "internal nnc error";
+	case NNC_R_LIMITS: return "internal limit exceeded";
 	}
 	return NULL;
 }
